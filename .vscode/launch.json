@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-TokenizationApplication<tokenization>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.tokenization.TokenizationApplication",
+            "projectName": "tokenization",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
