@@ -1,0 +1,3 @@
+com\example\tokenization\service\FpeTokenizationService.class
+com\example\tokenization\controller\TokenizationController.class
+com\example\tokenization\TokenizationApplication.class
