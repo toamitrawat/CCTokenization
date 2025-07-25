@@ -1,9 +1,12 @@
 package com.example.tokenization.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class TokenResponse {
     private String token;
-    public TokenResponse() {}
-    public TokenResponse(String token) { this.token = token; }
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
 } 

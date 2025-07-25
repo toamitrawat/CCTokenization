@@ -1,3 +1,7 @@
 D:\Java_Projects\CursorWS\src\main\java\com\example\tokenization\controller\TokenizationController.java
+D:\Java_Projects\CursorWS\src\main\java\com\example\tokenization\dto\CreditCardRequest.java
+D:\Java_Projects\CursorWS\src\main\java\com\example\tokenization\dto\CreditCardResponse.java
+D:\Java_Projects\CursorWS\src\main\java\com\example\tokenization\dto\TokenRequest.java
+D:\Java_Projects\CursorWS\src\main\java\com\example\tokenization\dto\TokenResponse.java
 D:\Java_Projects\CursorWS\src\main\java\com\example\tokenization\service\FpeTokenizationService.java
 D:\Java_Projects\CursorWS\src\main\java\com\example\tokenization\TokenizationApplication.java

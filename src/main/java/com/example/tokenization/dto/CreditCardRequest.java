@@ -1,9 +1,12 @@
 package com.example.tokenization.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreditCardRequest {
     private String ccNumber;
-    public CreditCardRequest() {}
-    public CreditCardRequest(String ccNumber) { this.ccNumber = ccNumber; }
-    public String getCcNumber() { return ccNumber; }
-    public void setCcNumber(String ccNumber) { this.ccNumber = ccNumber; }
 } 
