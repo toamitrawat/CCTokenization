@@ -4,7 +4,10 @@ import com.example.tokenization.service.FpeTokenizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
+import com.example.tokenization.dto.CreditCardRequest;
+import com.example.tokenization.dto.TokenResponse;
+import com.example.tokenization.dto.TokenRequest;
+import com.example.tokenization.dto.CreditCardResponse;
 
 @RestController
 @RequestMapping("/api")
@@ -13,16 +16,14 @@ public class TokenizationController {
     private FpeTokenizationService fpeTokenizationService;
 
     @PostMapping("/tokenize")
-    public ResponseEntity<Map<String, String>> tokenize(@RequestBody Map<String, String> request) {
-        String ccNumber = request.get("ccNumber");
-        String token = fpeTokenizationService.tokenize(ccNumber);
-        return ResponseEntity.ok(Map.of("token", token));
+    public ResponseEntity<TokenResponse> tokenize(@RequestBody CreditCardRequest request) {
+        String token = fpeTokenizationService.tokenize(request.getCcNumber());
+        return ResponseEntity.ok(new TokenResponse(token));
     }
 
     @PostMapping("/detokenize")
-    public ResponseEntity<Map<String, String>> detokenize(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
-        String ccNumber = fpeTokenizationService.detokenize(token);
-        return ResponseEntity.ok(Map.of("ccNumber", ccNumber));
+    public ResponseEntity<CreditCardResponse> detokenize(@RequestBody TokenRequest request) {
+        String ccNumber = fpeTokenizationService.detokenize(request.getToken());
+        return ResponseEntity.ok(new CreditCardResponse(ccNumber));
     }
 } 
