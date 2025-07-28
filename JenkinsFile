@@ -7,6 +7,7 @@ pipeline {
     IMAGE_TAG = 'latest'
     CLUSTER_NAME = 'free-eks-cluster'
     AWS_ACCOUNT_ID = '538143631035'
+    IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
   }
 
   stages {
@@ -17,22 +18,33 @@ pipeline {
       }
     }
 
-    stage('Build Docker Image') {
-      steps 
-	  {withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-eks-creds']]){
-        sh '''
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-          docker build -t $ECR_REPO:$IMAGE_TAG .
-          docker tag $ECR_REPO:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
-        '''
+    stage('Build and Tag Docker Image') {
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-eks-creds']]) {
+          sh '''
+            set -e
+
+            # Login to ECR
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+            # Create ECR repo if it doesn't exist
+            if ! aws ecr describe-repositories --repository-names $ECR_REPO --region $AWS_REGION > /dev/null 2>&1; then
+              echo "Creating ECR repo: $ECR_REPO"
+              aws ecr create-repository --repository-name $ECR_REPO --region $AWS_REGION
+            fi
+
+            # Build and tag Docker image
+            docker build -t $ECR_REPO:$IMAGE_TAG .
+            docker tag $ECR_REPO:$IMAGE_TAG $IMAGE_URI
+          '''
+        }
       }
-	  }
     }
 
     stage('Push to ECR') {
       steps {
         sh '''
-          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+          docker push $IMAGE_URI
         '''
       }
     }
@@ -52,6 +64,12 @@ pipeline {
           kubectl apply -f service.yaml
         '''
       }
+    }
+  }
+
+  post {
+    always {
+      cleanWs()
     }
   }
 }
