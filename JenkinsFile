@@ -12,7 +12,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        deleteDir()
+        cleanWs()
         git branch: 'main', url: 'https://github.com/toamitrawat/CCTokenization.git'
       }
     }
