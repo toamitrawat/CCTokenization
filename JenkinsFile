@@ -60,9 +60,14 @@ pipeline {
           aws sts get-caller-identity  # Debug check
 		
           aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
-		  kubectl apply -f deployment.yaml
-          kubectl apply -f service.yaml
-        '''
+		  
+		  # Export AWS_PROFILE env block for subprocesses like kubectl exec plugin
+        export KUBECONFIG=/root/.kube/config
+
+        echo "Deploying to EKS"
+        kubectl apply -f deployment.yaml --validate=false
+        kubectl apply -f service.yaml --validate=false
+		 '''
       }
 	 }
 	}
