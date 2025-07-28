@@ -61,6 +61,14 @@ pipeline {
 		
           aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 		  
+		  # Generate auth token
+        TOKEN=$(aws eks get-token --region $AWS_REGION --cluster-name $CLUSTER_NAME --output text --query 'status.token')
+
+        # Set kubeconfig with bearer token manually
+        kubectl config set-credentials jenkins-user --token="$TOKEN"
+        kubectl config set-context --current --user=jenkins-user
+		
+		  
 		  # Export AWS_PROFILE env block for subprocesses like kubectl exec plugin
         export KUBECONFIG=/root/.kube/config
 
