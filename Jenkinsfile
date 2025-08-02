@@ -21,7 +21,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git url: "${GIT_REPO}", branch: 'main', credentialsId: 'github-pat'
+                git url: "${GIT_REPO}", branch: 'ec2_deploy', credentialsId: 'github-pat'
             }
         }
 
