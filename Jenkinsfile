@@ -13,6 +13,12 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git url: "${GIT_REPO}", branch: 'main', credentialsId: 'github-pat'
@@ -21,7 +27,11 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh """
+            mvn clean package -DskipTests
+            cp target/tokenization-0.0.1-SNAPSHOT.jar target/tokenization-app.jar
+        """
+                
             }
         }
 
@@ -48,6 +58,9 @@ pipeline {
     }
 
     post {
+        always {
+            cleanWs()
+        }
         success {
             echo 'Deployment successful!'
         }
