@@ -1,84 +1,58 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    AWS_REGION = 'ap-south-1'
-    ECR_REPO = 'cctokenization-app'
-    IMAGE_TAG = 'latest'
-    CLUSTER_NAME = 'free-eks-cluster'
-    AWS_ACCOUNT_ID = '538143631035'
-    IMAGE_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        cleanWs()
-        git branch: 'main', url: 'https://github.com/toamitrawat/CCTokenization.git'
-      }
+    environment {
+        GIT_REPO = 'https://github.com/toamitrawat/CCTokenization.git'
+        EC2_USER = 'ec2-user'  // or ubuntu
+        EC2_IP   = '13.234.17.67'   // replace with your EC2 public IP
+        JAR_NAME = 'target/tokenization-app.jar'
     }
 
-    stage('Build and Tag Docker Image') {
-      steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-eks-creds']]) {
-          sh '''
-            set -e
+    parameters {
+        booleanParam(name: 'AUTO_DEPLOY', defaultValue: true, description: 'Auto deploy after build')
+    }
 
-            # Login to ECR
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-
-            # Create ECR repo if it doesn't exist
-            if ! aws ecr describe-repositories --repository-names $ECR_REPO --region $AWS_REGION > /dev/null 2>&1; then
-              echo "Creating ECR repo: $ECR_REPO"
-              aws ecr create-repository --repository-name $ECR_REPO --region $AWS_REGION
-            fi
-
-            # Build and tag Docker image
-            docker build -t $ECR_REPO:$IMAGE_TAG .
-            docker tag $ECR_REPO:$IMAGE_TAG $IMAGE_URI
-          '''
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: "${GIT_REPO}", branch: 'main', credentialsId: 'github-pat'
+            }
         }
-      }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Deploy to EC2') {
+            when {
+                expression { return params.AUTO_DEPLOY == true }
+            }
+            steps {
+                sshagent (credentials: ['ec2-ssh-key']) {
+                    // Copy JAR to EC2
+                    sh """
+                        scp -o StrictHostKeyChecking=no ${JAR_NAME} ${EC2_USER}@${EC2_IP}:/home/${EC2_USER}/
+                    """
+
+                    // Run the app in background
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                            nohup java -jar /home/${EC2_USER}/tokenization-app.jar > app.log 2>&1 &
+                        '
+                    """
+                }
+            }
+        }
     }
 
-    stage('Push to ECR') {
-      steps {
-        sh '''
-          docker push $IMAGE_URI
-        '''
-      }
+    post {
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed!'
+        }
     }
-
-    stage('Configure kubeconfig and Deploy to EKS') {
-      steps{
-		withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-eks-creds']]){
-        sh '''
-		  export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-          export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-          export AWS_DEFAULT_REGION=$AWS_REGION
-
-          aws sts get-caller-identity  # Debug check
-		
-          aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
-				  
-		  # Export AWS_PROFILE env block for subprocesses like kubectl exec plugin
-        export KUBECONFIG=/root/.kube/config
-		echo "Testing kubectl access..."
-        kubectl get svc
-		
-        echo "Deploying to EKS"
-        kubectl apply -f deployment.yaml --validate=false
-        kubectl apply -f service.yaml --validate=false
-		 '''
-      }
-	 }
-	}
-    
- }
-
-  post {
-    always {
-      cleanWs()
-    }
-  }
 }
