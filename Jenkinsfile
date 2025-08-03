@@ -47,11 +47,12 @@ pipeline {
 
             // Stop old app and start new one
             sh """
-                ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
-                    pkill -f tokenization-app.jar || true
-                    nohup java -jar /home/${EC2_USER}/tokenization-app.jar > app.log 2>&1 &
-                '
-            """
+    ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} << 'EOF'
+        pkill -f tokenization-app.jar || true
+        nohup java -jar /home/${EC2_USER}/tokenization-app.jar > app.log 2>&1 &
+    EOF
+"""
+
         }
     }
 }
