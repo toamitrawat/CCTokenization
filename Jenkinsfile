@@ -42,7 +42,7 @@ pipeline {
                 sshagent (credentials: ['ec2-ssh-key']) {
                     sh """
                         # Stop any existing process running the JAR
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "
                             PID=$(pgrep -f tokenization-app.jar)
                             if [ ! -z "$PID" ]; then
                                 echo "Stopping existing app (PID: \$PID)..."
@@ -51,7 +51,7 @@ pipeline {
                             else
                                 echo "No existing app running."
                             fi
-                        '
+                        "
                     """
 
                     // Copy the new JAR
