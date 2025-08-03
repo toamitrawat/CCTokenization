@@ -35,25 +35,27 @@ pipeline {
         }
 
         stage('Deploy to EC2') {
-            when {
-                expression { return params.AUTO_DEPLOY == true }
-            }
-            steps {
-                sshagent (credentials: ['ec2-ssh-key']) {
-                    // Copy JAR to EC2
-                    sh """
-                        scp -o StrictHostKeyChecking=no ${JAR_NAME} ${EC2_USER}@${EC2_IP}:/home/${EC2_USER}/
-                    """
+    when {
+        expression { return params.AUTO_DEPLOY == true }
+    }
+    steps {
+        sshagent (credentials: ['ec2-ssh-key']) {
+            // Copy JAR to EC2
+            sh """
+                scp -o StrictHostKeyChecking=no ${JAR_NAME} ${EC2_USER}@${EC2_IP}:/home/${EC2_USER}/
+            """
 
-                    // Stop old app and start new one
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} \\
-                        'pkill -f tokenization-app.jar || true; \\
-                        nohup java -jar /home/${EC2_USER}/tokenization-app.jar > app.log 2>&1 &'
-                    """
-                }
-            }
+            // Stop old app and start new one
+            sh """
+                ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                    pkill -f tokenization-app.jar || true
+                    nohup java -jar /home/${EC2_USER}/tokenization-app.jar > app.log 2>&1 &
+                '
+            """
         }
+    }
+}
+
     }
 
     post {
