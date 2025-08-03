@@ -28,10 +28,9 @@ pipeline {
         stage('Build') {
             steps {
                 sh """
-            mvn clean package -DskipTests
-            cp target/tokenization-0.0.1-SNAPSHOT.jar target/tokenization-app.jar
-        """
-                
+                    mvn clean package -DskipTests
+                    cp target/tokenization-0.0.1-SNAPSHOT.jar target/tokenization-app.jar
+                """
             }
         }
 
@@ -41,7 +40,21 @@ pipeline {
             }
             steps {
                 sshagent (credentials: ['ec2-ssh-key']) {
-                    // Copy JAR to EC2
+                    sh """
+                        # Stop any existing process running the JAR
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                            PID=$(pgrep -f tokenization-app.jar)
+                            if [ ! -z "$PID" ]; then
+                                echo "Stopping existing app (PID: \$PID)..."
+                                kill -9 \$PID
+                                sleep 2
+                            else
+                                echo "No existing app running."
+                            fi
+                        '
+                    """
+
+                    // Copy the new JAR
                     sh """
                         scp -o StrictHostKeyChecking=no ${JAR_NAME} ${EC2_USER}@${EC2_IP}:/home/${EC2_USER}/
                     """
