@@ -40,30 +40,16 @@ pipeline {
             }
             steps {
                 sshagent (credentials: ['ec2-ssh-key']) {
-                    sh """
-                        # Stop any existing process running the JAR
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} "
-                            PID=$(pgrep -f tokenization-app.jar)
-                            if [ ! -z "$PID" ]; then
-                                echo "Stopping existing app (PID: \$PID)..."
-                                kill -9 \$PID
-                                sleep 2
-                            else
-                                echo "No existing app running."
-                            fi
-                        "
-                    """
-
-                    // Copy the new JAR
+                    // Copy JAR to EC2
                     sh """
                         scp -o StrictHostKeyChecking=no ${JAR_NAME} ${EC2_USER}@${EC2_IP}:/home/${EC2_USER}/
                     """
 
-                    // Run the app in background
+                    // Stop old app and start new one
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
-                            nohup java -jar /home/${EC2_USER}/tokenization-app.jar > app.log 2>&1 &
-                        '
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} \\
+                        'pkill -f tokenization-app.jar || true; \\
+                        nohup java -jar /home/${EC2_USER}/tokenization-app.jar > app.log 2>&1 &'
                     """
                 }
             }
